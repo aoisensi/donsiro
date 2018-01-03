@@ -1,4 +1,4 @@
-package info.aoisensi.donsiro.donsiro
+package info.aoisensi.donsiro
 
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
@@ -17,6 +17,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getTargetContext()
-        assertEquals("info.aoisensi.donsiro.donsiro", appContext.packageName)
+        assertEquals("info.aoisensi.donsiro", appContext.packageName)
     }
 }

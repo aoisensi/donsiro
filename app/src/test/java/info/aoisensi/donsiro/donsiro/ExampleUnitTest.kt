@@ -1,4 +1,4 @@
-package info.aoisensi.donsiro.donsiro
+package info.aoisensi.donsiro
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

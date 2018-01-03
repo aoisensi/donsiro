@@ -1,4 +1,4 @@
-package info.aoisensi.donsiro.donsiro
+package info.aoisensi.donsiro
 
 import android.os.Bundle
 import android.support.design.widget.NavigationView
