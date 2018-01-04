@@ -10,7 +10,6 @@ import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import info.aoisensi.donsiro.api.MastodonApplication
@@ -119,18 +118,7 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<MastodonApplication?>
 
     class LoginTaskLoader(context: LoginActivity, private val mDomain: String) : AsyncTaskLoader<MastodonApplication?>(context) {
         override fun loadInBackground(): MastodonApplication? {
-            val service = MastodonService.build(mDomain)
-            val result = service.registerApp("Donsiro").execute()
-            Log.d("donsiro", result.code().toString())
-            return result.body()
-            /*
-            return try {
-                service.registerApp("Donsiro").execute().body()
-            } catch (e: Exception) {
-                Log.w("donsiro", e.localizedMessage)
-                null
-            }
-            */
+            return MastodonService.registerApp(mDomain, "Donsiro")
         }
 
         override fun onStartLoading() {
