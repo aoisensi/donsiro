@@ -105,6 +105,7 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<MastodonApplication?>
     }
 
     override fun onLoadFinished(loader: Loader<MastodonApplication?>?, data: MastodonApplication?) {
+        loaderManager.destroyLoader(loader!!.id)
         if (data != null) {
             //TODO open web browser
             Toast.makeText(this, data.clientId, Toast.LENGTH_SHORT).show()
