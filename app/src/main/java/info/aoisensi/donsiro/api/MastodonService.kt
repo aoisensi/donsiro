@@ -27,9 +27,13 @@ class MastodonService {
                 }.build())
             }.build()
             val response = client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                throw MastodonException("failed http")
+            }
+            val body = response.body()!!
             val moshi = Moshi.Builder().build()
             val adapter = moshi.adapter<MastodonApplication>(MastodonApplication::class.java)
-            return adapter.fromJson(response.body()!!.string())!!
+            return adapter.fromJson(body.string())!!
         }
     }
 }
