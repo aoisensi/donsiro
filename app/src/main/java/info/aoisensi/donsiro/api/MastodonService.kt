@@ -1,6 +1,7 @@
 package info.aoisensi.donsiro.api
 
-import com.squareup.moshi.Moshi
+import android.util.Log
+import com.beust.klaxon.Klaxon
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -28,12 +29,13 @@ class MastodonService {
             }.build()
             val response = client.newCall(request).execute()
             if (!response.isSuccessful) {
-                throw MastodonException("failed http")
+                throw MastodonException("failed http request")
             }
-            val body = response.body()!!
-            val moshi = Moshi.Builder().build()
-            val adapter = moshi.adapter<MastodonApplication>(MastodonApplication::class.java)
-            return adapter.fromJson(body.string())!!
+            val code = response.code()
+            Log.d("donsiro", "http status is $code")
+            val body = response.body()!!.string()
+            Log.d("donsiro", body)
+            return Klaxon().parse<MastodonApplication>(body)!!
         }
     }
 }

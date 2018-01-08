@@ -1,6 +1,6 @@
 package info.aoisensi.donsiro.api
 
-import com.squareup.moshi.Json
+import com.beust.klaxon.Json
 
 /**
  * Created by aoisensi on 2018/01/03.
@@ -9,6 +9,8 @@ import com.squareup.moshi.Json
 
 data class MastodonApplication(
         @Json(name = "id") val id: String,
+        @Json(name = "name") val name: String,
+//        @Json(name = "website") val website: String,
         @Json(name = "redirect_uri") val redirectUri: String,
         @Json(name = "client_id") val clientId: String,
         @Json(name = "client_secret") val clientSecret: String
