@@ -41,7 +41,9 @@
                     android:hint="@string/prompt_domain"
                     android:inputType="textEmailAddress"
                     android:maxLines="1"
-                    android:singleLine="true" />
+                    android:singleLine="true"
+                    android:text="mstdn.jp"
+                    tools:ignore="HardcodedText" />
 
             </android.support.design.widget.TextInputLayout>
 

@@ -2,9 +2,11 @@
   <dictionary name="aoisensi">
     <words>
       <w>aoisensi</w>
+      <w>browsable</w>
       <w>donsiro</w>
       <w>ietf</w>
       <w>moshi</w>
+      <w>mstdn</w>
     </words>
   </dictionary>
 </component>

@@ -2,17 +2,17 @@ package info.aoisensi.donsiro
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
-import android.annotation.TargetApi
 import android.app.LoaderManager.LoaderCallbacks
 import android.content.AsyncTaskLoader
 import android.content.Intent
 import android.content.Loader
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
+import android.util.Log
 import android.view.View
+import android.widget.Toast
 import com.google.gson.Gson
 import com.sys1yagi.mastodon4j.MastodonClient
 import com.sys1yagi.mastodon4j.api.Scope
@@ -24,7 +24,9 @@ import okhttp3.OkHttpClient
 /**
  * A login screen that offers login via email/password.
  */
-class LoginActivity : AppCompatActivity(), LoaderCallbacks<Pair<AppRegistration, String>> {
+class LoginActivity : AppCompatActivity(), LoaderCallbacks<Any> {
+
+    var mAppRegistration: AppRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,18 +70,22 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<Pair<AppRegistration,
             showProgress(true)
             val bundle = Bundle()
             bundle.putString("domain", domainStr)
-            loaderManager.initLoader(0, bundle, this)
+            loaderManager.initLoader(1, bundle, this)
         }
+    }
+
+    private fun attemptAuth(code: String) {
+        showProgress(true)
+        val bundle = Bundle()
+        bundle.putString("domain", domain.text.toString())
+        bundle.putString("code", code)
+        loaderManager.initLoader(2, bundle, this)
     }
 
     private fun isDomainValid(domain: String): Boolean {
         return domain.contains(".")
     }
 
-    /**
-     * Shows the progress UI and hides the login form.
-     */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
     private fun showProgress(show: Boolean) {
         val shortAnimTime = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
 
@@ -105,33 +111,83 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<Pair<AppRegistration,
 
     }
 
-    override fun onCreateLoader(i: Int, bundle: Bundle?): Loader<Pair<AppRegistration, String>>? {
-        return LoginTaskLoader(this, bundle!!.getString("domain"))
+    override fun onCreateLoader(i: Int, bundle: Bundle?): Loader<Any>? {
+        return when (i) {
+            1 -> LoginTaskLoader(this, bundle!!.getString("domain"))
+            2 -> AuthTaskLoader(this, bundle!!.getString("domain"), mAppRegistration!!, bundle.getString("code"))
+            else -> throw Exception()
+        }
     }
 
-    override fun onLoadFinished(loader: Loader<Pair<AppRegistration, String>>, data: Pair<AppRegistration, String>) {
-        loaderManager.destroyLoader(loader.id)
-        showProgress(false)
-        // Show browser
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(data.second)))
+    override fun onLoadFinished(loader: Loader<Any>, data: Any) {
+        val loaderId = loader.id
+        loaderManager.destroyLoader(loaderId)
+        when (loaderId) {
+            1 -> {
+                data as Pair<*, *>
+                mAppRegistration = data.first as AppRegistration
+                showProgress(false)
+                // Show browser
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(data.second as String)))
+            }
+            2 -> {
+                showProgress(false)
+                //TODO
+                Toast.makeText(this, data as String, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
-    override fun onLoaderReset(loader: Loader<Pair<AppRegistration, String>>) {
+    override fun onLoaderReset(loader: Loader<Any>) {
 
     }
 
-    class LoginTaskLoader(context: LoginActivity, private val mDomain: String) : AsyncTaskLoader<Pair<AppRegistration, String>>(context) {
-        override fun loadInBackground(): Pair<AppRegistration, String> {
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        intent?.data ?: return
+        mAppRegistration ?: return
+        val code = intent.data.getQueryParameter("code")
+        attemptAuth(code)
+    }
+
+    class LoginTaskLoader(context: LoginActivity, private val mDomain: String) : AsyncTaskLoader<Any>(context) {
+        override fun loadInBackground(): Any {
             val apps = Apps(MastodonClient.Builder(mDomain, OkHttpClient.Builder(), Gson()).build())
             val scope = Scope(Scope.Name.ALL)
-            val redirectUris = "urn:ietf:wg:oauth:2.0:oob"
+            val redirectUris = "donsiro://oauth2"
             val app = apps.createApp(
                     clientName = "Donsiro",
                     redirectUris = redirectUris,
                     scope = scope
             ).execute()
-            val url = apps.getOAuthUrl(app.clientId, scope)
+            val url = apps.getOAuthUrl(
+                    clientId = app.clientId,
+                    redirectUri = redirectUris,
+                    scope = scope
+            )
+            Log.d("donsiro", url)
             return Pair(app, url)
+        }
+
+        override fun onStartLoading() {
+            forceLoad()
+        }
+    }
+
+    class AuthTaskLoader(context: LoginActivity,
+                         private val mDomain: String,
+                         private val mAppRegistration: AppRegistration,
+                         private val mCode: String
+    ) : AsyncTaskLoader<Any>(context) {
+        override fun loadInBackground(): Any {
+            val apps = Apps(MastodonClient.Builder(mDomain, OkHttpClient.Builder(), Gson()).build())
+            return apps.getAccessToken(
+                    mAppRegistration.clientId,
+                    mAppRegistration.clientSecret,
+                    mAppRegistration.redirectUri,
+                    mCode,
+                    "authorization_code"
+            ).execute().accessToken
         }
 
         override fun onStartLoading() {
