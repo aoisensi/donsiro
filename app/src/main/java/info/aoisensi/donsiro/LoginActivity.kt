@@ -5,21 +5,26 @@ import android.animation.AnimatorListenerAdapter
 import android.annotation.TargetApi
 import android.app.LoaderManager.LoaderCallbacks
 import android.content.AsyncTaskLoader
+import android.content.Intent
 import android.content.Loader
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
 import android.view.View
-import android.widget.Toast
-import info.aoisensi.donsiro.api.MastodonApplication
-import info.aoisensi.donsiro.api.MastodonService
+import com.google.gson.Gson
+import com.sys1yagi.mastodon4j.MastodonClient
+import com.sys1yagi.mastodon4j.api.Scope
+import com.sys1yagi.mastodon4j.api.entity.auth.AppRegistration
+import com.sys1yagi.mastodon4j.api.method.Apps
 import kotlinx.android.synthetic.main.activity_login.*
+import okhttp3.OkHttpClient
 
 /**
  * A login screen that offers login via email/password.
  */
-class LoginActivity : AppCompatActivity(), LoaderCallbacks<MastodonApplication?> {
+class LoginActivity : AppCompatActivity(), LoaderCallbacks<Pair<AppRegistration, String>> {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -100,26 +105,33 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<MastodonApplication?>
 
     }
 
-    override fun onCreateLoader(i: Int, bundle: Bundle?): Loader<MastodonApplication?>? {
+    override fun onCreateLoader(i: Int, bundle: Bundle?): Loader<Pair<AppRegistration, String>>? {
         return LoginTaskLoader(this, bundle!!.getString("domain"))
     }
 
-    override fun onLoadFinished(loader: Loader<MastodonApplication?>?, data: MastodonApplication?) {
-        loaderManager.destroyLoader(loader!!.id)
-        if (data != null) {
-            //TODO open web browser
-            Toast.makeText(this, data.clientId, Toast.LENGTH_SHORT).show()
-        }
+    override fun onLoadFinished(loader: Loader<Pair<AppRegistration, String>>, data: Pair<AppRegistration, String>) {
+        loaderManager.destroyLoader(loader.id)
         showProgress(false)
+        // Show browser
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(data.second)))
     }
 
-    override fun onLoaderReset(loader: Loader<MastodonApplication?>?) {
+    override fun onLoaderReset(loader: Loader<Pair<AppRegistration, String>>) {
 
     }
 
-    class LoginTaskLoader(context: LoginActivity, private val mDomain: String) : AsyncTaskLoader<MastodonApplication?>(context) {
-        override fun loadInBackground(): MastodonApplication? {
-            return MastodonService.registerApp(mDomain, "Donsiro")
+    class LoginTaskLoader(context: LoginActivity, private val mDomain: String) : AsyncTaskLoader<Pair<AppRegistration, String>>(context) {
+        override fun loadInBackground(): Pair<AppRegistration, String> {
+            val apps = Apps(MastodonClient.Builder(mDomain, OkHttpClient.Builder(), Gson()).build())
+            val scope = Scope(Scope.Name.ALL)
+            val redirectUris = "urn:ietf:wg:oauth:2.0:oob"
+            val app = apps.createApp(
+                    clientName = "Donsiro",
+                    redirectUris = redirectUris,
+                    scope = scope
+            ).execute()
+            val url = apps.getOAuthUrl(app.clientId, scope)
+            return Pair(app, url)
         }
 
         override fun onStartLoading() {
