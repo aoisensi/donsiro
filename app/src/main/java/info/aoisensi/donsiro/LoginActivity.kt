@@ -10,7 +10,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import com.google.gson.Gson
@@ -134,6 +133,7 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<Any> {
                 showProgress(false)
                 //TODO
                 Toast.makeText(this, data as String, Toast.LENGTH_SHORT).show()
+                finish()
             }
         }
     }
@@ -165,7 +165,6 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<Any> {
                     redirectUri = redirectUris,
                     scope = scope
             )
-            Log.d("donsiro", url)
             return Pair(app, url)
         }
 
